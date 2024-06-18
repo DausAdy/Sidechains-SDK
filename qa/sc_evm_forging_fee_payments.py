@@ -410,7 +410,15 @@ class ScEvmForgingFeePayments(AccountChainSetup):
         fee_payments_api_response = http_block_getFeePayments(sc_node_1, last_block_id)['feePayments']
         assert_equal(node_1_fees, [f for f in fee_payments_api_response if f['address']['address'] != self.FORGER_REWARD_ADDRESS][0]['value'])
         assert_equal(node_2_fees, [f for f in fee_payments_api_response if f['address']['address'] == self.FORGER_REWARD_ADDRESS][0]['value'])
-
+        rpc_fee_payments_node1 = sc_node_1.rpc_zen_getFeePayments(add_0x_prefix(last_block_id))['result']['payments']
+        rpc_fee_payments_node2 = sc_node_2.rpc_zen_getFeePayments(add_0x_prefix(last_block_id))['result']['payments']
+        assert_equal(rpc_fee_payments_node1, rpc_fee_payments_node2)
+        assert_equal(rpc_fee_payments_node1[0]['value'], rpc_fee_payments_node1[0]['valueFromMainchain'])
+        assert_equal(rpc_fee_payments_node1[1]['value'], rpc_fee_payments_node1[1]['valueFromMainchain'])
+        assert_equal('0x0', rpc_fee_payments_node1[0]['valueFromFees'])
+        assert_equal('0x0', rpc_fee_payments_node1[1]['valueFromFees'])
+        assert_equal(node_1_fees, int([f for f in rpc_fee_payments_node1 if f['address'] != '0x' + self.FORGER_REWARD_ADDRESS][0]['value'], 16))
+        assert_equal(node_2_fees, int([f for f in rpc_fee_payments_node1 if f['address'] == '0x' + self.FORGER_REWARD_ADDRESS][0]['value'], 16))
         '''
         #####################################################################################
         '''

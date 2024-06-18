@@ -3,6 +3,7 @@ package io.horizen.account.serialization;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.module.scala.DefaultScalaModule;
 import io.horizen.evm.utils.BigIntegerDeserializer;
 import io.horizen.evm.utils.BigIntegerSerializer;
@@ -21,6 +22,7 @@ public class EthJsonMapper {
         module.addDeserializer(byte[].class, new EthByteDeserializer());
         mapper = new ObjectMapper();
         mapper.registerModule(new DefaultScalaModule());
+        mapper.registerModule(new Jdk8Module());
         mapper.registerModule(module);
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
     }
