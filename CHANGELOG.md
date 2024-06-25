@@ -1,3 +1,6 @@
+**0.13.0**
+1. Enabling preimages configuration
+
 **0.12.0**
 1. Sparkz dependency updated to 2.4.0
     * Updates in EON forger nodes connection policy (see release notes for further info) 
