@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.horizen.account.api.rpc.handler.RpcException
 import io.horizen.account.api.rpc.request.RpcRequest
 import io.horizen.account.block.AccountBlock
+import io.horizen.account.chain.AccountFeePaymentsInfo
 import io.horizen.account.fork.GasFeeFork.DefaultGasFeeFork
 import io.horizen.account.history.AccountHistory
 import io.horizen.account.mempool.AccountMemoryPool
@@ -17,7 +18,7 @@ import io.horizen.account.state.AccountState
 import io.horizen.account.state.receipt.{EthereumReceipt, ReceiptFixture}
 import io.horizen.account.transaction.EthereumTransaction
 import io.horizen.account.transaction.EthereumTransaction.EthereumTransactionType
-import io.horizen.account.utils.{AccountMockDataHelper, EthereumTransactionEncoder, FeeUtils}
+import io.horizen.account.utils.{AccountMockDataHelper, AccountPayment, EthereumTransactionEncoder, FeeUtils}
 import io.horizen.account.wallet.AccountWallet
 import io.horizen.api.http.{SidechainApiMockConfiguration, SidechainTransactionActorRef}
 import io.horizen.consensus.ConsensusParamsUtil
@@ -31,7 +32,9 @@ import io.horizen.params.RegTestParams
 import io.horizen.utils.{BytesUtils, TimeToEpochUtils}
 import io.horizen.{EthServiceSettings, SidechainTypes}
 import org.junit.{Before, Test}
+import org.mockito.ArgumentMatchers.{any, anyString}
 import org.mockito.Mockito
+import org.mockito.Mockito.when
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.junit.JUnitSuite
 import org.scalatestplus.mockito.MockitoSugar
@@ -42,7 +45,7 @@ import sparkz.core.bytesToId
 import sparkz.core.network.NetworkController.ReceivableMessages.GetConnectedPeers
 import sparkz.core.network.NodeViewSynchronizer.ReceivableMessages.SuccessfulTransaction
 import sparkz.crypto.hash.Keccak256
-import sparkz.util.ByteArrayBuilder
+import sparkz.util.{ByteArrayBuilder, ModifierId}
 import sparkz.util.serialization.VLQByteBufferWriter
 
 import java.math.BigInteger
@@ -390,6 +393,15 @@ class EthServiceTest extends JUnitSuite with MockitoSugar with ReceiptFixture wi
       Some(genesisBlock),
       Some(genesisBlockId)
     )
+    when(mockedHistory.feePaymentsInfo(any())).thenAnswer(_ =>
+      Some(AccountFeePaymentsInfo(
+        Seq(AccountPayment(
+            new AddressProposition(new Address("0xd123b689dad8ed6b99f8bd55eed64ab357e6a8d1")),
+            BigInteger.valueOf(1),
+          Some(BigInteger.valueOf(0)),
+          None
+        )))))
+
     val mockedState: AccountState = mockHelper.getMockedState(receipt, Numeric.hexStringToByteArray(txHash))
 
     val secret = PrivateKeySecp256k1Creator
@@ -1144,8 +1156,8 @@ class EthServiceTest extends JUnitSuite with MockitoSugar with ReceiptFixture wi
   def zen_getFeePayments(): Unit = {
     val validCases = Table(
       ("Block id", "Expected output"),
-      ("0xdc7ac3d7de9d7fc524bbb95025a98c3e9290b041189ee73c638cf981e7f99bfc", """{"payments":[]}"""),
-      ("0x2", """{"payments":[]}"""),
+      ("0xdc7ac3d7de9d7fc524bbb95025a98c3e9290b041189ee73c638cf981e7f99bfc", """{"payments":[{"address":"0xd123b689dad8ed6b99f8bd55eed64ab357e6a8d1","value":"0x1","valueFromMainchain":"0x0"}]}"""),
+      ("0x2", """{"payments":[{"address":"0xd123b689dad8ed6b99f8bd55eed64ab357e6a8d1","value":"0x1","valueFromMainchain":"0x0"}]}"""),
     )
 
     val invalidCases =

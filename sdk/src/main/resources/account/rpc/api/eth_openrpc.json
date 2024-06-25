@@ -95,6 +95,16 @@
 							"title": "hex encoded value in wei",
 							"type": "string",
 							"pattern": "^0x[0-9,a-f,A-F]{40}$"
+						},
+						"valueFromMainchain": {
+							"title": "After 1.4 - part of 'value' from mainchain reward. Hex encoded value in wei",
+							"type": "string",
+							"pattern": "^0x[0-9,a-f,A-F]{40}$"
+						},
+						"valueFromFees": {
+							"title": "After 1.4 - part of 'value' from fees reward. Hex encoded value in wei",
+							"type": "string",
+							"pattern": "^0x[0-9,a-f,A-F]{40}$"
 						}
 					}
 				}
