@@ -50,10 +50,11 @@ object SidechainSettingsReader
     val ethServiceSettings = config.as[EthServiceSettings]("sparkz.ethService")
     val apiRateLimiterSettings = config.as[ApiRateLimiterSettings]("sparkz.apiRateLimiter")
     val historySettings = config.as[HistorySettings]("sparkz.history")
+    val evmStateDumpSettings = config.as[EvmStateDump]("sparkz.evmStateDump")
 
     SidechainSettings(sparkzSettings, metricsSettings, genesisSettings, webSocketClientSettings, webSocketServerSettings, certificateSettings,
       remoteKeysManagerSettings, mempoolSettings, walletSettings, forgerSettings, cswSettings, logInfoSettings,
-      ethServiceSettings, accountMempoolSettings, apiRateLimiterSettings, historySettings)
+      ethServiceSettings, accountMempoolSettings, apiRateLimiterSettings, historySettings, evmStateDumpSettings)
   }
 
   def readConfigFromPath(userConfigPath: String, applicationConfigPath: Option[String]): Config = {

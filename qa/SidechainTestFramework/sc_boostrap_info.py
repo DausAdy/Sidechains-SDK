@@ -156,7 +156,8 @@ class SCNodeConfiguration(object):
                  max_mempool_slots=DEFAULT_MAX_MEMPOOL_SLOTS,
                  max_nonexec_pool_slots=DEFAULT_MAX_NONEXEC_POOL_SLOTS,
                  tx_lifetime=DEFAULT_TX_LIFETIME,
-                 handling_txs_enabled=True
+                 handling_txs_enabled=True,
+                 evm_state_dump_enabled=True
 
                  ):
         if submitter_private_keys_indexes is None:
@@ -193,7 +194,8 @@ class SCNodeConfiguration(object):
         self.max_mempool_slots = max_mempool_slots
         self.max_nonexec_pool_slots = max_nonexec_pool_slots
         self.tx_lifetime = tx_lifetime
-        self.handling_txs_enabled=handling_txs_enabled
+        self.handling_txs_enabled = handling_txs_enabled
+        self.evm_state_dump_enabled = evm_state_dump_enabled
 
 
     def update_websocket_config(self, websocket_server_enabled, websocket_server_port):

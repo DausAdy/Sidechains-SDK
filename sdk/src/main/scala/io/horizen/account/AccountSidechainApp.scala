@@ -107,7 +107,8 @@ class AccountSidechainApp @Inject()
   protected val stateMetadataStorage = new AccountStateMetadataStorage(
     registerClosableResource(new VersionedLevelDbStorageAdapter(metaStateStore, params.maxHistoryRewritingLength * 2)))
 
-  protected val stateDbStorage: LevelDBDatabase = registerClosableResource(new LevelDBDatabase(dataDirAbsolutePath + "/evm-state"))
+  protected val stateDbStorage: LevelDBDatabase = registerClosableResource(new LevelDBDatabase(dataDirAbsolutePath + "/evm-state",
+                                                                            sidechainSettings.evmStateDump.enabled))
 
   protected val consensusDataStorage = new ConsensusDataStorage(
     registerClosableResource(new VersionedLevelDbStorageAdapter(consensusStore, 5)))

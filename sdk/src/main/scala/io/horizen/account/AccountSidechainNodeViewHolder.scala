@@ -125,6 +125,7 @@ class AccountSidechainNodeViewHolder(sidechainSettings: SidechainSettings,
 
   override def restoreState(): Option[(HIS, MS, VL, MP)] = {
     log.info("Restoring persistent state from storage...")
+    log.info(s"restoreState - state dump enabled: ${sidechainSettings.evmStateDump.enabled}")
 
     val restoredData = for {
       history <- AccountHistory.restoreHistory(historyStorage, consensusDataStorage, params, semanticBlockValidators(params), historyBlockValidators(params))
@@ -141,6 +142,7 @@ class AccountSidechainNodeViewHolder(sidechainSettings: SidechainSettings,
   }
 
   override protected def genesisState: (HIS, MS, VL, MP) = {
+    log.info(s"genesisState - state dump enabled: ${sidechainSettings.evmStateDump.enabled}")
     val result = for {
       state <- AccountState.createGenesisState(stateMetadataStorage, stateDbStorage, messageProcessors(params), params, timeProvider, blockHashProvider, genesisBlock)
       (_: ModifierId, consensusEpochInfo: ConsensusEpochInfo) <- Success(state.getCurrentConsensusEpochInfo)

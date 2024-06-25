@@ -282,7 +282,8 @@ abstract class AbstractSidechainNodeViewHolder[
     if (!history().contains(pmod.id)) {
       context.system.eventStream.publish(StartingPersistentModifierApplication(pmod))
 
-      log.info(s"Apply modifier ${pmod.encodedId} of type ${pmod.modifierTypeId} to nodeViewHolder")
+      log.info(s"Apply modifier ${pmod.encodedId} of type ${pmod.modifierTypeId} to nodeViewHolder" +
+        {if (sidechainSettings.evmStateDump.enabled) ", state dump enabled" else ""})
 
       history().append(pmod) match {
         case Success((historyBeforeStUpdate, progressInfo)) =>
