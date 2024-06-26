@@ -389,6 +389,8 @@ class StateDbAccountStateView(
 
   override def getBalance(address: Address): BigInteger = stateDb.getBalance(address)
 
+  def dump(dumpFile: String): Unit = stateDb.dump(dumpFile)
+
   override def getCodeHash(address: Address): Array[Byte] = stateDb.getCodeHash(address).toBytes
 
   override def getCode(address: Address): Array[Byte] = stateDb.getCode(address)
