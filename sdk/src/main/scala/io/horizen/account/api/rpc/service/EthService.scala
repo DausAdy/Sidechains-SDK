@@ -53,7 +53,7 @@ import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
 import scala.collection.mutable.ListBuffer
 import scala.compat.java8.OptionConverters.RichOptionalGeneric
-import scala.concurrent.duration.{FiniteDuration, MINUTES}
+import scala.concurrent.duration.{FiniteDuration, SECONDS}
 import scala.concurrent.{Await, Future, TimeoutException}
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
@@ -1186,19 +1186,24 @@ class EthService(
 
 
   @RpcMethod("zen_dump")
-  def dump(blockHashOrNumber: String, dumpFile: String): Unit = {
+  @RpcOptionalParameters(1)
+  def dump(blockHashOrNumber: String, dumpFile: String, timeoutInSeconds: Int): Unit = {
     if (!isEvmDumpEnabled)
       throw new RpcException(RpcError.fromCode(RpcCode.ActionNotAllowed))
+
+    log.info(s"Dump timeout $timeoutInSeconds")
+    val dumpTimeout = if (timeoutInSeconds == 0) 300 else timeoutInSeconds
     applyOnAccountView ({ nodeView =>
       // get block info
       val blockInfo = getBlockInfoById(nodeView, getBlockIdByHashOrNumber(nodeView, blockHashOrNumber))
-
       // get state at selected block
       getStateViewAtTag(nodeView, blockInfo.height.toString) {
         (tagStateView, _) =>
+          log.error(s"Starting dump at block $blockHashOrNumber to file $dumpFile")
           tagStateView.dump(dumpFile)
+          log.error("Dump completed successfully")
       }
-    }, new FiniteDuration(5, MINUTES)
+    }, new FiniteDuration(dumpTimeout, SECONDS)
     )
   }
 
