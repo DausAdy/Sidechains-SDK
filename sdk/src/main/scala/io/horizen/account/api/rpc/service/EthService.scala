@@ -1191,8 +1191,8 @@ class EthService(
     if (!isEvmDumpEnabled)
       throw new RpcException(RpcError.fromCode(RpcCode.ActionNotAllowed))
 
-    log.info(s"Dump timeout $timeoutInSeconds")
     val dumpTimeout = if (timeoutInSeconds == 0) 300 else timeoutInSeconds
+    log.info(s"Dump timeout $dumpTimeout")
     applyOnAccountView ({ nodeView =>
       // get block info
       val blockInfo = getBlockInfoById(nodeView, getBlockIdByHashOrNumber(nodeView, blockHashOrNumber))
