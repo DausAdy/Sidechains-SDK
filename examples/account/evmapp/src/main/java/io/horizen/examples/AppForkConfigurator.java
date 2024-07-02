@@ -12,7 +12,7 @@ import java.util.List;
 
 public class AppForkConfigurator extends ForkConfigurator {
     @Override
-    public SidechainForkConsensusEpoch fork1activation() {
+    public SidechainForkConsensusEpoch forkActivation() {
         return new SidechainForkConsensusEpoch(0, 0, 0);
     }
 
@@ -77,6 +77,10 @@ public class AppForkConfigurator extends ForkConfigurator {
             new Pair<>(
                     new SidechainForkConsensusEpoch(80, 80, 80),
                     new Version1_4_0Fork(true)
+            ),
+            new Pair<>(
+                    new SidechainForkConsensusEpoch(90, 90, 90),
+                    new Version1_5_0Fork(true)
             )
         );
     }

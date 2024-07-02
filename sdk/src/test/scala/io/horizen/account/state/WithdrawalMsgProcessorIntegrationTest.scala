@@ -2,11 +2,13 @@ package io.horizen.account.state
 
 import com.google.common.primitives.Bytes
 import io.horizen.account.fork.GasFeeFork.DefaultGasFeeFork
+import io.horizen.account.fork.Version1_5_0Fork
 import io.horizen.account.state.events.AddWithdrawalRequest
 import io.horizen.account.state.receipt.EthereumConsensusDataLog
 import io.horizen.account.utils.ZenWeiConverter
 import io.horizen.evm.{Address, Hash}
-import io.horizen.utils.{BytesUtils, ClosableResourceHandler}
+import io.horizen.fork.{ForkConfigurator, ForkManagerUtil, OptionalSidechainFork, SidechainForkConsensusEpoch}
+import io.horizen.utils.{BytesUtils, ClosableResourceHandler, Pair}
 import org.junit.Assert._
 import org.junit._
 import org.scalatestplus.junit.JUnitSuite
@@ -17,6 +19,7 @@ import sparkz.crypto.hash.Keccak256
 
 import java.math.BigInteger
 import java.util
+import scala.collection.JavaConverters.seqAsJavaListConverter
 
 class WithdrawalMsgProcessorIntegrationTest
     extends JUnitSuite
@@ -24,8 +27,21 @@ class WithdrawalMsgProcessorIntegrationTest
       with WithdrawalMsgProcessorFixture
       with ClosableResourceHandler {
 
+  val V1_5_MOCK_FORK_POINT: Int = 400
+
+  class TestOptionalForkConfigurator extends ForkConfigurator {
+    override val forkActivation: SidechainForkConsensusEpoch = SidechainForkConsensusEpoch(0, 0, 0)
+
+    override def getOptionalSidechainForks: util.List[Pair[SidechainForkConsensusEpoch, OptionalSidechainFork]] =
+      Seq[Pair[SidechainForkConsensusEpoch, OptionalSidechainFork]](
+        new Pair(SidechainForkConsensusEpoch(V1_5_MOCK_FORK_POINT, V1_5_MOCK_FORK_POINT, V1_5_MOCK_FORK_POINT), Version1_5_0Fork(true)),
+      ).asJava
+  }
+
   @Before
-  def setUp(): Unit = {}
+  def setUp(): Unit = {
+    ForkManagerUtil.initializeForkManager(new TestOptionalForkConfigurator, "regtest")
+  }
 
   @Test
   def testInit(): Unit = {
@@ -110,7 +126,7 @@ class WithdrawalMsgProcessorIntegrationTest
         getMessage(WithdrawalMsgProcessor.contractAddress, BigInteger.ZERO, data)
       }
       val exGetList = intercept[Throwable] {
-         assertGas(0, badMsgGetList, view, WithdrawalMsgProcessor, defaultBlockContext)
+        assertGas(0, badMsgGetList, view, WithdrawalMsgProcessor, defaultBlockContext)
       }
       assertTrue(exGetList.getMessage.contains("Could not decode"))
 
@@ -190,5 +206,36 @@ class WithdrawalMsgProcessorIntegrationTest
     val listOfDecodedData = FunctionReturnDecoder.decode(BytesUtils.toHexString(actualEvent.data), listOfRefs)
     assertEquals("Wrong amount in data", expectedEvent.value, listOfDecodedData.get(0))
     assertEquals("Wrong epoch number in data", expectedEvent.epochNumber, listOfDecodedData.get(1))
+  }
+
+  @Test
+  def testWithdrawalRequestProcessorFork5Activated(): Unit = {
+    usingView(WithdrawalMsgProcessor) { view =>
+      WithdrawalMsgProcessor.init(view, 0)
+
+      // use a context carrying the info of the epoch number which activates the fork 1.5
+      val blockContext = new BlockContext(
+        Address.ZERO,
+        0,
+        0,
+        DefaultGasFeeFork.blockGasLimit,
+        0,
+        V1_5_MOCK_FORK_POINT,
+        0,
+        1,
+        MockedHistoryBlockHashProvider,
+        Hash.ZERO
+      )
+
+      // Creating Withdrawal request
+      val withdrawalAmount = ZenWeiConverter.convertZenniesToWei(123)
+      val msg = addWithdrawalRequestMessage(withdrawalAmount)
+
+      val ex = intercept[ExecutionRevertedException] {
+        assertGas(0, msg, view, WithdrawalMsgProcessor, blockContext)
+      }
+      assertTrue(ex.getMessage.contains("fork 1.5 active, backward transfers disabled"))
+
+    }
   }
 }

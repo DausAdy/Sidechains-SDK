@@ -13,7 +13,7 @@ object CustomForkConfiguratorWithConsensusParamsFork {
       /**
        * Mandatory for every sidechain to provide an epoch number here.
        */
-      override val fork1activation: SidechainForkConsensusEpoch = SidechainForkConsensusEpoch(10, 20, 0)
+      override val forkActivation: SidechainForkConsensusEpoch = SidechainForkConsensusEpoch(10, 20, 0)
 
       override def getOptionalSidechainForks: util.List[Pair[SidechainForkConsensusEpoch, OptionalSidechainFork]] = {
 

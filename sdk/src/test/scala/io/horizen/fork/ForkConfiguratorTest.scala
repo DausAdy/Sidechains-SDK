@@ -12,14 +12,14 @@ import scala.jdk.CollectionConverters.seqAsJavaListConverter
  * "Bad" fork because one of the activation epochs is negative, i.e. before the default that activate at 0.
  */
 class BadForkConfigurator extends ForkConfigurator {
-  override val fork1activation: SidechainForkConsensusEpoch = SidechainForkConsensusEpoch(0, 0, -5)
+  override val forkActivation: SidechainForkConsensusEpoch = SidechainForkConsensusEpoch(0, 0, -5)
 }
 
 /**
  * Too many sc2sc forks, only one is allowed.
  */
 class BadSc2scForkConfigurator extends ForkConfigurator {
-  override val fork1activation: SidechainForkConsensusEpoch = SidechainForkConsensusEpoch(0, 0, 5)
+  override val forkActivation: SidechainForkConsensusEpoch = SidechainForkConsensusEpoch(0, 0, 5)
 
   override def getOptionalSidechainForks: util.List[Pair[SidechainForkConsensusEpoch, OptionalSidechainFork]] = {
     Seq[Pair[SidechainForkConsensusEpoch, OptionalSidechainFork]](
@@ -49,7 +49,7 @@ case class MustNotDecreaseFork(foo: Long, bar: Long) extends OptionalSidechainFo
  * Uses the MustNotDecreaseFork and fails its validation (one of the values decreases in a fork).
  */
 class BadOptionalForkConfigurator extends ForkConfigurator {
-  override val fork1activation: SidechainForkConsensusEpoch = SidechainForkConsensusEpoch(0, 0, 5)
+  override val forkActivation: SidechainForkConsensusEpoch = SidechainForkConsensusEpoch(0, 0, 5)
 
   override def getOptionalSidechainForks: util.List[Pair[SidechainForkConsensusEpoch, OptionalSidechainFork]] =
     Seq[Pair[SidechainForkConsensusEpoch, OptionalSidechainFork]](
@@ -61,7 +61,7 @@ class BadOptionalForkConfigurator extends ForkConfigurator {
 }
 
 class GoodOptionalForkConfigurator extends ForkConfigurator {
-  override val fork1activation: SidechainForkConsensusEpoch = SidechainForkConsensusEpoch(0, 0, 5)
+  override val forkActivation: SidechainForkConsensusEpoch = SidechainForkConsensusEpoch(0, 0, 5)
 
   override def getOptionalSidechainForks: util.List[Pair[SidechainForkConsensusEpoch, OptionalSidechainFork]] =
     Seq[Pair[SidechainForkConsensusEpoch, OptionalSidechainFork]](

@@ -2,9 +2,9 @@
 import logging
 import pprint
 import time
-from _decimal import Decimal
 
 import base58
+from _decimal import Decimal
 from eth_abi import decode
 from eth_utils import add_0x_prefix, encode_hex, event_signature_to_log_topic, remove_0x_prefix
 
@@ -18,7 +18,8 @@ from SidechainTestFramework.account.httpCalls.wallet.balance import http_wallet_
 from SidechainTestFramework.account.simple_proxy_contract import SimpleProxyContract
 from SidechainTestFramework.account.utils import (computeForgedTxFee,
                                                   convertZenToZennies, convertZenniesToWei,
-                                                  WITHDRAWAL_REQ_SMART_CONTRACT_ADDRESS, INTEROPERABILITY_FORK_EPOCH)
+                                                  WITHDRAWAL_REQ_SMART_CONTRACT_ADDRESS, INTEROPERABILITY_FORK_EPOCH,
+                                                  VERSION_1_5_FORK_EPOCH)
 from SidechainTestFramework.sc_forging_util import check_mcreference_presence, check_mcreferencedata_presence
 from SidechainTestFramework.scutil import (
     generate_next_block, generate_next_blocks, EVM_APP_SLOT_TIME
@@ -60,6 +61,7 @@ Test:
           and then to MC/SC blocks.
         - verify epoch 1 certificate, verify backward transfers list    
         - interoperability tests
+        - Verify that after reaching fork 1.5 backward transfers are disabled, bith via http api and via native contract
 """
 
 
@@ -87,6 +89,18 @@ class SCEvmBackwardTransfer(AccountChainSetup):
     def __init__(self):
         super().__init__(block_timestamp_rewind=1500 * EVM_APP_SLOT_TIME * INTEROPERABILITY_FORK_EPOCH,
                          withdrawalEpochLength=10)
+
+    def advance_to_epoch(self, epoch_number: int):
+        sc_node = self.sc_nodes[0]
+        forging_info = sc_node.block_forgingInfo()
+        current_epoch = forging_info["result"]["bestBlockEpochNumber"]
+        # make sure we are not already passed the desired epoch
+        assert_false(current_epoch > epoch_number, "unexpected epoch number")
+        while current_epoch < epoch_number:
+            generate_next_block(sc_node, "first node", force_switch_to_next_epoch=True)
+            self.sc_sync_all()
+            forging_info = sc_node.block_forgingInfo()
+            current_epoch = forging_info["result"]["bestBlockEpochNumber"]
 
     def run_test(self):
         time.sleep(0.1)
@@ -394,8 +408,8 @@ class SCEvmBackwardTransfer(AccountChainSetup):
         native_contract = SmartContract("WithdrawalRequests")
 
         # Test before interoperability fork
-        method = "getBackwardTransfers(uint32)"
-        native_input = format_eoa(native_contract.raw_encode_call(method, current_epoch_number))
+        method_get = "getBackwardTransfers(uint32)"
+        native_input = format_eoa(native_contract.raw_encode_call(method_get, current_epoch_number))
         if self.options.all_forks is False:
             try:
                 proxy_contract.do_static_call(evm_address_interop, 1, WITHDRAWAL_REQ_SMART_CONTRACT_ADDRESS, native_input)
@@ -456,8 +470,8 @@ class SCEvmBackwardTransfer(AccountChainSetup):
         generate_next_block(sc_node, "first node")
 
         # Create a transaction requesting a withdrawal request using the proxy smart contract
-        method = "backwardTransfer(bytes20)"
-        native_input = format_eoa(native_contract.raw_encode_call(method, hex_str_to_bytes(mc_address1_pk)))
+        method_bwt = "backwardTransfer(bytes20)"
+        native_input = format_eoa(native_contract.raw_encode_call(method_bwt, hex_str_to_bytes(mc_address1_pk)))
 
         bt_amount_in_zennies = 100
         bt_amount_in_wei = convertZenniesToWei(bt_amount_in_zennies)
@@ -511,6 +525,41 @@ class SCEvmBackwardTransfer(AccountChainSetup):
 
         gas_used_tracer = int(trace_result['gasUsed'], 16)
         assert_true(gas_used == gas_used_tracer, "Wrong gas")
+
+        # Create a transaction requesting a withdrawal request via smart contract call
+        tx_hash = native_contract.call_function(sc_node, method_bwt, hex_str_to_bytes(mc_address1_pk),
+                                                fromAddress=evm_address_interop, gasLimit=230000,
+                                                toAddress=WITHDRAWAL_REQ_SMART_CONTRACT_ADDRESS,
+                                                value=convertZenniesToWei(sc_bt_amount_in_zennies_2))
+
+        # Check the receipt
+        tx_receipt = generate_block_and_get_tx_receipt(sc_node, tx_hash)['result']
+        assert_equal('0x1', tx_receipt['status'], 'Transaction should fail')
+
+        # try doing the same but reach the fork first, and check we can not do a backward transfer anymore
+        self.advance_to_epoch(VERSION_1_5_FORK_EPOCH)
+
+        try:
+            withdrawcoins(sc_node, mc_address2, sc_bt_amount_in_zennies_2)
+            fail("Interoperability call should fail before fork point")
+        except Exception as err:
+            print("Expected exception thrown: {}".format(err))
+            # error is raised from API since the address has no balance
+            assert_true("Fork 1.5 is active" in str(err))
+        # 'Something went wrong, see {\'error\': {\'code\': \'0204\', \'description\': \'Fork 1.5 is active, can not invoke this command\', \'detail\': \'\'}}'
+
+        # Create a transaction requesting a withdrawal request using the native smart contract
+        tx_hash = native_contract.call_function(sc_node, method_bwt, hex_str_to_bytes(mc_address1_pk),
+                                     fromAddress=evm_address_interop, gasLimit=230000,
+                                     toAddress=WITHDRAWAL_REQ_SMART_CONTRACT_ADDRESS,
+                                     value=convertZenniesToWei(sc_bt_amount_in_zennies_2))
+
+        # Check the receipt
+        tx_receipt = generate_block_and_get_tx_receipt(sc_node, tx_hash)['result']
+        assert_equal('0x0', tx_receipt['status'], 'Transaction should fail')
+
+        res = sc_node.rpc_debug_traceTransaction(tx_hash, {"tracer": "callTracer"})['result']
+        assert_true("fork 1.5 active" in str(res['error']))
 
 
 if __name__ == "__main__":

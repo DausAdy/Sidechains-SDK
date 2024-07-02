@@ -46,7 +46,7 @@ class McAddrOwnershipMsgProcessorMultisigTest
   val VER_1_2_MOCK_FORK_POINT: Int = 110
 
   class TestOptionalForkConfigurator extends ForkConfigurator {
-    override val fork1activation: SidechainForkConsensusEpoch = SidechainForkConsensusEpoch(0, 0, 0)
+    override val forkActivation: SidechainForkConsensusEpoch = SidechainForkConsensusEpoch(0, 0, 0)
 
     override def getOptionalSidechainForks: util.List[Pair[SidechainForkConsensusEpoch, OptionalSidechainFork]] =
       Seq[Pair[SidechainForkConsensusEpoch, OptionalSidechainFork]](

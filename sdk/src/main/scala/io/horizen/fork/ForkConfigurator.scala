@@ -10,13 +10,13 @@ abstract class ForkConfigurator {
   /**
    * Mandatory for every sidechain to provide an epoch number here.
    */
-  val fork1activation: SidechainForkConsensusEpoch
+  val forkActivation: SidechainForkConsensusEpoch
 
   /**
    * Return the map of configured consensus epoch numbers to mandatory sidechain forks.
    */
   final lazy val mandatorySidechainForks: Map[SidechainForkConsensusEpoch, MandatorySidechainFork] =
-    MandatorySidechainFork.forks(fork1activation)
+    MandatorySidechainFork.forks(forkActivation)
 
   /**
    * Return the map of optional sidechain forks and their consensus epoch numbers.
