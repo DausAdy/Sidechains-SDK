@@ -53,7 +53,7 @@ import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
 import scala.collection.mutable.ListBuffer
 import scala.compat.java8.OptionConverters.RichOptionalGeneric
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{FiniteDuration, SECONDS}
 import scala.concurrent.{Await, Future, TimeoutException}
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
@@ -68,7 +68,8 @@ class EthService(
     rpcClientVersion: String,
     sidechainTransactionActorRef: ActorRef,
     syncStatusActorRef: ActorRef,
-    transactionsCompanion: SidechainAccountTransactionsCompanion
+    transactionsCompanion: SidechainAccountTransactionsCompanion,
+    isEvmDumpEnabled: Boolean = false
 ) extends RpcService
       with ClosableResourceHandler
       with SparkzLogging {
@@ -936,7 +937,6 @@ class EthService(
         throw new RpcException(RpcError.fromCode(RpcCode.InvalidParams, s"transaction not found: $transactionHash"))
       )
 
-
     applyOnAccountView { nodeView =>
       getStateViewAtTag(nodeView, (blockNumber - 1).toString) { (tagStateView, _) =>
 
@@ -1183,5 +1183,29 @@ class EthService(
   def getSHA3(data: Array[Byte]): Hash = {
       new Hash(Keccak256.hash(data))
   }
+
+
+  @RpcMethod("zen_dump")
+  @RpcOptionalParameters(1)
+  def dump(blockHashOrNumber: String, dumpFile: String, timeoutInSeconds: Int): Unit = {
+    if (!isEvmDumpEnabled)
+      throw new RpcException(RpcError.fromCode(RpcCode.ActionNotAllowed))
+
+    val dumpTimeout = if (timeoutInSeconds == 0) 300 else timeoutInSeconds
+    log.info(s"Dump timeout $dumpTimeout")
+    applyOnAccountView ({ nodeView =>
+      // get block info
+      val blockInfo = getBlockInfoById(nodeView, getBlockIdByHashOrNumber(nodeView, blockHashOrNumber))
+      // get state at selected block
+      getStateViewAtTag(nodeView, blockInfo.height.toString) {
+        (tagStateView, _) =>
+          log.error(s"Starting dump at block $blockHashOrNumber to file $dumpFile")
+          tagStateView.dump(dumpFile)
+          log.error("Dump completed successfully")
+      }
+    }, new FiniteDuration(dumpTimeout, SECONDS)
+    )
+  }
+
 
 }
