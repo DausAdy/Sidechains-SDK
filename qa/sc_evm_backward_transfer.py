@@ -541,10 +541,9 @@ class SCEvmBackwardTransfer(AccountChainSetup):
 
         try:
             withdrawcoins(sc_node, mc_address2, sc_bt_amount_in_zennies_2)
-            fail("Interoperability call should fail before fork point")
+            fail("call should fail after fork 1.5 activation")
         except Exception as err:
             print("Expected exception thrown: {}".format(err))
-            # error is raised from API since the address has no balance
             assert_true("Fork 1.5 is active" in str(err))
         # 'Something went wrong, see {\'error\': {\'code\': \'0204\', \'description\': \'Fork 1.5 is active, can not invoke this command\', \'detail\': \'\'}}'
 
