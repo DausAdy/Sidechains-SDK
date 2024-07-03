@@ -152,6 +152,7 @@ testScriptsEvm=(
     'sc_evm_forger_reward_address.py'
     'sc_evm_native_forger_v2.py'
     'sc_evm_forger_v2_register.py'
+    'sc_evm_dump.py'
 );
 
 testScriptsUtxo=(

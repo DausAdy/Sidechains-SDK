@@ -5,6 +5,7 @@ import akka.testkit.{TestActor, TestProbe}
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.horizen.account.api.rpc.handler.RpcException
 import io.horizen.account.api.rpc.request.RpcRequest
+import io.horizen.account.api.rpc.utils.RpcCode
 import io.horizen.account.block.AccountBlock
 import io.horizen.account.chain.AccountFeePaymentsInfo
 import io.horizen.account.fork.GasFeeFork.DefaultGasFeeFork
@@ -31,8 +32,9 @@ import io.horizen.network.SyncStatusActor.ReceivableMessages.GetSyncStatus
 import io.horizen.params.RegTestParams
 import io.horizen.utils.{BytesUtils, TimeToEpochUtils}
 import io.horizen.{EthServiceSettings, SidechainTypes}
+import org.junit.Assert.assertEquals
 import org.junit.{Before, Test}
-import org.mockito.ArgumentMatchers.{any, anyString}
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito
 import org.mockito.Mockito.when
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -45,7 +47,7 @@ import sparkz.core.bytesToId
 import sparkz.core.network.NetworkController.ReceivableMessages.GetConnectedPeers
 import sparkz.core.network.NodeViewSynchronizer.ReceivableMessages.SuccessfulTransaction
 import sparkz.crypto.hash.Keccak256
-import sparkz.util.{ByteArrayBuilder, ModifierId}
+import sparkz.util.ByteArrayBuilder
 import sparkz.util.serialization.VLQByteBufferWriter
 
 import java.math.BigInteger
@@ -596,9 +598,9 @@ class EthServiceTest extends JUnitSuite with MockitoSugar with ReceiptFixture wi
 
     val invalidCases = Table(
       ("Block tag", "Transaction index"),
-      // the "safe" block is not available here (mininum block height > 100)
+      // the "safe" block is not available here (minimum block height > 100)
       ("safe", "0"),
-      // the "finalized" block is not available here (mininum block height > 100)
+      // the "finalized" block is not available here (minimum block height > 100)
       ("finalized", "0"),
       // invalid block tag
       ("aaaa", "0"),
@@ -1483,4 +1485,10 @@ class EthServiceTest extends JUnitSuite with MockitoSugar with ReceiptFixture wi
       rpc("eth_getLogs", Map("fromBlock" -> "1", "toBlock" -> "10002"))
     }
   }
+
+  @Test
+  def zen_dump(): Unit = {
+    assertEquals(RpcCode.ActionNotAllowed.code, intercept[RpcException] { rpc("zen_dump", "latest", "/tmp/file.json")}.error.code)
+  }
+
 }

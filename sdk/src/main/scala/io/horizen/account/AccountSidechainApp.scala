@@ -175,7 +175,8 @@ class AccountSidechainApp @Inject()
       RpcUtils.getClientVersion(appVersion),
       sidechainTransactionActorRef,
       syncStatusActorRef,
-      sidechainTransactionsCompanion
+      sidechainTransactionsCompanion,
+      sidechainSettings.evmStateDump.enabled
     )
   )
   //Initialize RpcProcessor object with the rpcHandler
