@@ -9,7 +9,7 @@ import java.util.List;
 
 public class AppForkConfiguratorAllEnabledFromEpoch2 extends ForkConfigurator {
     @Override
-    public SidechainForkConsensusEpoch fork1activation() {
+    public SidechainForkConsensusEpoch forkActivation() {
         return new SidechainForkConsensusEpoch(0, 0, 0);
     }
 
@@ -60,6 +60,11 @@ public class AppForkConfiguratorAllEnabledFromEpoch2 extends ForkConfigurator {
                     new SidechainForkConsensusEpoch(2, 2, 2),
                     new Version1_4_0Fork(true)
             )
+            // This is not included because this fork disables backward transfers
+            /*      , new Pair<>(
+                    new SidechainForkConsensusEpoch(2, 2, 2),
+                    new Version1_5_0Fork(true)
+            )*/
         );
     }
 }

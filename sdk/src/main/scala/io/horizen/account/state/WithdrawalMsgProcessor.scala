@@ -3,6 +3,7 @@ package io.horizen.account.state
 import com.google.common.primitives.{Bytes, Ints}
 import io.horizen.account.abi.ABIUtil.{METHOD_ID_LENGTH, getABIMethodId, getArgumentsFromData, getFunctionSignature}
 import io.horizen.account.abi.{ABIDecoder, ABIEncodable, ABIListEncoder, MsgProcessorInputDecoder}
+import io.horizen.account.fork.Version1_5_0Fork
 import io.horizen.account.state.events.AddWithdrawalRequest
 import io.horizen.account.storage.MsgProcessorMetadataStorageReader
 import io.horizen.account.utils.WellKnownAddresses.WITHDRAWAL_REQ_SMART_CONTRACT_ADDRESS
@@ -35,6 +36,10 @@ object WithdrawalMsgProcessor extends NativeSmartContractMsgProcessor with Withd
   val AddNewWithdrawalReqCmdSig: String = getABIMethodId("backwardTransfer(bytes20)")
   val DustThresholdInWei: BigInteger = ZenWeiConverter.convertZenniesToWei(ZenCoinsUtils.getMinDustThreshold(ZenCoinsUtils.MC_DEFAULT_FEE_RATE))
 
+  def isForkActive(consensusEpochNumber: Int): Boolean = {
+    Version1_5_0Fork.get(consensusEpochNumber).active
+  }
+
   @throws(classOf[ExecutionFailedException])
   override def process(invocation: Invocation, view: BaseAccountStateView, metadata: MsgProcessorMetadataStorageReader, context: ExecutionContext): Array[Byte] = {
     val gasView = view.getGasTrackedView(invocation.gasPool)
@@ -43,6 +48,8 @@ object WithdrawalMsgProcessor extends NativeSmartContractMsgProcessor with Withd
         execGetListOfWithdrawalReqRecords(invocation, gasView)
 
       case AddNewWithdrawalReqCmdSig =>
+        if (isForkActive(context.blockContext.consensusEpochNumber))
+            throw new ExecutionRevertedException(s"fork 1.5 active, backward transfers disabled")
         execAddWithdrawalRequest(invocation, gasView, context.blockContext.withdrawalEpochNumber)
 
       case functionSig =>

@@ -128,7 +128,7 @@ class ForgerStakeV2MsgProcessorTest
 
 
   class TestOptionalForkConfigurator extends ForkConfigurator {
-    override val fork1activation: SidechainForkConsensusEpoch = SidechainForkConsensusEpoch(0, 0, 0)
+    override val forkActivation: SidechainForkConsensusEpoch = SidechainForkConsensusEpoch(0, 0, 0)
     override def getOptionalSidechainForks: util.List[Pair[SidechainForkConsensusEpoch, OptionalSidechainFork]] =
       Seq[Pair[SidechainForkConsensusEpoch, OptionalSidechainFork]](
         new Pair(SidechainForkConsensusEpoch(V1_3_MOCK_FORK_POINT, V1_3_MOCK_FORK_POINT, V1_3_MOCK_FORK_POINT), Version1_3_0Fork(true)),
