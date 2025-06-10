@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.horizen</groupId>
   <artifactId>sidechains-sdk-scbootstrappingtools</artifactId>
-  <version>0.13.0-RC1</version>
+  <version>0.13.0-RC5</version>
   <name>${project.groupId}:${project.artifactId}</name>
   <description>This module offers a way to create a sidechain's configuration file and some utilities.</description>
   <url>https://github.com/${project.github.organization}/${project.artifactId}</url>
@@ -32,12 +32,6 @@
     <system>GitHub</system>
     <url>https://github.com/${project.github.organization}/${project.artifactId}/issues</url>
   </issueManagement>
-  <distributionManagement>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-  </distributionManagement>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>11</maven.compiler.source>
@@ -49,7 +43,7 @@
     <dependency>
       <groupId>io.horizen</groupId>
       <artifactId>sidechains-sdk</artifactId>
-      <version>0.13.0-RC1</version>
+      <version>0.13.0-RC5</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -133,9 +127,12 @@
   </profiles>
   <repositories>
     <repository>
-      <id>oss-sonatype</id>
-      <name>oss-sonatype</name>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+      <id>central-portal-snapshots</id>
+      <name>Central Portal Snapshots</name>
+      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
       <snapshots>
         <enabled>true</enabled>
       </snapshots>
@@ -185,14 +182,14 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.sonatype.plugins</groupId>
-        <artifactId>nexus-staging-maven-plugin</artifactId>
-        <version>1.6.8</version>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
+        <version>0.7.0</version>
         <extensions>true</extensions>
         <configuration>
-          <serverId>ossrh</serverId>
-          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-          <autoReleaseAfterClose>true</autoReleaseAfterClose>
+          <publishingServerId>central</publishingServerId>
+          <autoPublish>true</autoPublish>
+          <waitUntil>published</waitUntil>
         </configuration>
       </plugin>
     </plugins>

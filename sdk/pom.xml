@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.horizen</groupId>
   <artifactId>sidechains-sdk</artifactId>
-  <version>0.13.0-RC1</version>
+  <version>0.13.0-RC5</version>
   <name>${project.groupId}:${project.artifactId}</name>
   <description>Zendoo is a unique sidechain and scaling solution developed by Horizen. The Zendoo ${project.artifactId} is a framework that supports the creation of sidechains and their custom business logic, with the Horizen public blockchain as the mainchain.</description>
   <url>https://github.com/${project.github.organization}/${project.artifactId}</url>
@@ -32,12 +32,6 @@
     <system>GitHub</system>
     <url>https://github.com/${project.github.organization}/${project.artifactId}/issues</url>
   </issueManagement>
-  <distributionManagement>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-  </distributionManagement>
   <properties>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
@@ -356,7 +350,7 @@
     <dependency>
       <groupId>io.horizen</groupId>
       <artifactId>libevm</artifactId>
-      <version>1.2.0-SNAPSHOT</version>
+      <version>1.2.0</version>
     </dependency>
     <dependency>
       <groupId>at.favre.lib</groupId>
@@ -365,6 +359,7 @@
     </dependency>
   </dependencies>
   <repositories>
+<!-- These repositories are used only for SNAPSHOT dependencies. They could have been removed, but they have been kept just in case...-->
     <repository>
       <id>softmotions_repository</id>
       <name>Softmotions Public Repository</name>
@@ -374,6 +369,17 @@
       <id>oss-sonatype</id>
       <name>oss-sonatype</name>
       <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>central-portal-snapshots</id>
+      <name>Central Portal Snapshots</name>
+      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
       <snapshots>
         <enabled>true</enabled>
       </snapshots>
@@ -566,14 +572,14 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.sonatype.plugins</groupId>
-        <artifactId>nexus-staging-maven-plugin</artifactId>
-        <version>1.6.13</version>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
+        <version>0.7.0</version>
         <extensions>true</extensions>
         <configuration>
-          <serverId>ossrh</serverId>
-          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-          <autoReleaseAfterClose>true</autoReleaseAfterClose>
+          <publishingServerId>central</publishingServerId>
+          <autoPublish>true</autoPublish>
+          <waitUntil>published</waitUntil>
         </configuration>
       </plugin>
       <plugin>
