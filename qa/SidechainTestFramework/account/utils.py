@@ -56,6 +56,8 @@ VERSION_1_2_FORK_EPOCH = 60
 VERSION_1_3_FORK_EPOCH = 70
 # The activation epoch for features released in v1.4, as coded in the sdk
 VERSION_1_4_FORK_EPOCH = 80
+# The activation epoch for features released in v1.5, as coded in the sdk
+VERSION_1_5_FORK_EPOCH = 90
 
 # Block gas limit
 BLOCK_GAS_LIMIT = 30000000

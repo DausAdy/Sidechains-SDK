@@ -64,6 +64,10 @@ trait MockedSidechainNodeViewHolderFixture extends MockitoSugar {
       .thenAnswer(answer => {
         10000000L
       })
+    Mockito.when(sidechainSettings.evmStateDump)
+      .thenAnswer(_ => {
+        EvmStateDump(false)
+      })
     actorSystem.actorOf(Props(new MockedSidechainNodeViewHolder(sidechainSettings, history, state, wallet, mempool)))
   }
 

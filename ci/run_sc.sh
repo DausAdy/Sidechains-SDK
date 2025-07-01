@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-SIMPLE_APP_VERSION="${SIMPLE_APP_VERSION:-0.12.0}"
+SIMPLE_APP_VERSION="${SIMPLE_APP_VERSION:-0.13.0}"
 
 if [ -d "$1" ] && [ -f "$2" ]; then
   path_to_jemalloc="$(ldconfig -p | grep "$(arch)" | grep 'libjemalloc\.so\.1$' | tr -d ' ' | cut -d '>' -f 2)"

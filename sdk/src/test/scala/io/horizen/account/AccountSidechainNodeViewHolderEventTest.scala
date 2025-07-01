@@ -20,7 +20,7 @@ import io.horizen.metrics.MetricsManager
 import io.horizen.params.NetworkParams
 import io.horizen.storage.SidechainSecretStorage
 import io.horizen.utils.BytesUtils
-import io.horizen.{AccountMempoolSettings, SidechainSettings, SidechainTypes, WalletSettings}
+import io.horizen.{AccountMempoolSettings, EvmStateDump, SidechainSettings, SidechainTypes, WalletSettings}
 import org.junit.Assert.{assertEquals, assertTrue}
 import org.junit.{Before, Test}
 import org.mockito.{ArgumentMatchers, Mockito}
@@ -176,6 +176,7 @@ class AccountSidechainNodeViewHolderEventTest
     val mockWalletSettings: WalletSettings = mock[WalletSettings]
     Mockito.when(mockWalletSettings.maxTxFee).thenReturn(100L)
     Mockito.when(sidechainSettings.wallet).thenReturn(mockWalletSettings)
+    Mockito.when(sidechainSettings.evmStateDump).thenReturn(EvmStateDump(false))
     val params: NetworkParams = mock[NetworkParams]
     Mockito.when(params.chainId).thenReturn(1997)
     Mockito.when(params.circuitType).thenReturn(NaiveThresholdSignatureCircuit)

@@ -11,7 +11,7 @@ import io.horizen.account.api.http.route.AccountTransactionRestScheme._
 import io.horizen.account.block.{AccountBlock, AccountBlockHeader}
 import io.horizen.account.chain.AccountFeePaymentsInfo
 import io.horizen.account.companion.SidechainAccountTransactionsCompanion
-import io.horizen.account.fork.{Version1_3_0Fork, Version1_4_0Fork}
+import io.horizen.account.fork.{Version1_3_0Fork, Version1_4_0Fork, Version1_5_0Fork}
 import io.horizen.account.node.{AccountNodeView, NodeAccountHistory, NodeAccountMemoryPool, NodeAccountState}
 import io.horizen.account.proof.SignatureSecp256k1
 import io.horizen.account.proposition.AddressProposition
@@ -846,47 +846,58 @@ case class AccountTransactionApiRoute(override val settings: RESTApiSettings,
         entity(as[ReqWithdrawCoins]) { body =>
           // lock the view and try to create CoreTransaction
           applyOnNodeView { sidechainNodeView =>
-            val valueInWei = ZenWeiConverter.convertZenniesToWei(body.withdrawalRequest.value)
-            val gasInfo = body.gasInfo
 
-            // default gas related params
-            val baseFee = sidechainNodeView.getNodeState.getNextBaseFee
-            var maxPriorityFeePerGas = BigInteger.valueOf(120)
-            var maxFeePerGas = BigInteger.TWO.multiply(baseFee).add(maxPriorityFeePerGas)
-            var gasLimit = BigInteger.valueOf(500000)
+            val accountState = sidechainNodeView.getNodeState
+            val epochNumber = accountState.getConsensusEpochNumber.getOrElse(0)
 
-            if (gasInfo.isDefined) {
-              maxFeePerGas = gasInfo.get.maxFeePerGas
-              maxPriorityFeePerGas = gasInfo.get.maxPriorityFeePerGas
-              gasLimit = gasInfo.get.gasLimit
+            if (Version1_5_0Fork.get(epochNumber).active) {
+              ApiResponseUtil.toResponse(GenericTransactionError(s"Fork 1.5 is active, can not invoke this command",
+                JOptional.empty()))
+            } else {
+              val valueInWei = ZenWeiConverter.convertZenniesToWei(body.withdrawalRequest.value)
+              val gasInfo = body.gasInfo
+
+              // default gas related params
+              val baseFee = sidechainNodeView.getNodeState.getNextBaseFee
+              var maxPriorityFeePerGas = BigInteger.valueOf(120)
+              var maxFeePerGas = BigInteger.TWO.multiply(baseFee).add(maxPriorityFeePerGas)
+              var gasLimit = BigInteger.valueOf(500000)
+
+              if (gasInfo.isDefined) {
+                maxFeePerGas = gasInfo.get.maxFeePerGas
+                maxPriorityFeePerGas = gasInfo.get.maxPriorityFeePerGas
+                gasLimit = gasInfo.get.gasLimit
+              }
+
+              val txCost = valueInWei.add(maxFeePerGas.multiply(gasLimit))
+              val secret = getFittingSecret(sidechainNodeView, None, txCost)
+              secret match {
+                case Some(secret) =>
+                  val dataBytes = encodeAddNewWithdrawalRequestCmd(body.withdrawalRequest)
+                  dataBytes match {
+                    case Success(data) =>
+                      val nonce = body.nonce.getOrElse(sidechainNodeView.getNodeState.getNonce(secret.publicImage.address))
+                      val tmpTx: EthereumTransaction = new EthereumTransaction(
+                        params.chainId,
+                        JOptional.of(new AddressProposition(WithdrawalMsgProcessor.contractAddress)),
+                        nonce,
+                        gasLimit,
+                        maxPriorityFeePerGas,
+                        maxFeePerGas,
+                        valueInWei,
+                        data,
+                        null
+                      )
+                      validateAndSendTransaction(signTransactionWithSecret(secret, tmpTx))
+                    case Failure(exc) =>
+                      ApiResponseUtil.toResponse(ErrorInvalidMcAddress(s"Invalid Mc address ${body.withdrawalRequest.mainchainAddress}", JOptional.of(exc)))
+                  }
+                case None =>
+                  ApiResponseUtil.toResponse(ErrorInsufficientBalance("No account with enough balance found", JOptional.empty()))
+              }
             }
 
-            val txCost = valueInWei.add(maxFeePerGas.multiply(gasLimit))
-            val secret = getFittingSecret(sidechainNodeView, None, txCost)
-            secret match {
-              case Some(secret) =>
-                val dataBytes = encodeAddNewWithdrawalRequestCmd(body.withdrawalRequest)
-                dataBytes match {
-                  case Success(data) =>
-                    val nonce = body.nonce.getOrElse(sidechainNodeView.getNodeState.getNonce(secret.publicImage.address))
-                    val tmpTx: EthereumTransaction = new EthereumTransaction(
-                      params.chainId,
-                      JOptional.of(new AddressProposition(WithdrawalMsgProcessor.contractAddress)),
-                      nonce,
-                      gasLimit,
-                      maxPriorityFeePerGas,
-                      maxFeePerGas,
-                      valueInWei,
-                      data,
-                      null
-                    )
-                    validateAndSendTransaction(signTransactionWithSecret(secret, tmpTx))
-                  case Failure(exc) =>
-                    ApiResponseUtil.toResponse(ErrorInvalidMcAddress(s"Invalid Mc address ${body.withdrawalRequest.mainchainAddress}", JOptional.of(exc)))
-                }
-              case None =>
-                ApiResponseUtil.toResponse(ErrorInsufficientBalance("No account with enough balance found", JOptional.empty()))
-            }
+
           }
         }
       }

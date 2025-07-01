@@ -160,12 +160,22 @@ case class HistorySettings(
     resetModifiersStatus: Boolean = false,
 )
 
+
 case class MetricsApiSettings(
                            enabled: Boolean,
                            bindAddress: InetSocketAddress,
                            apiKeyHash: Option[String],
                            corsAllowedOrigin: Option[String],
                            timeout: FiniteDuration) extends ApiSettings
+
+case class EvmStateDump(
+
+                         /**
+                          * If true, enable collecting preimages, that is a pre-requirement for the state dump
+                          */
+                         enabled: Boolean = false,
+                       )
+
 case class SidechainSettings(
     sparkzSettings: SparkzSettings,
     metricsSettings: MetricsApiSettings,
@@ -182,7 +192,8 @@ case class SidechainSettings(
     ethService: EthServiceSettings,
     accountMempool: AccountMempoolSettings,
     apiRateLimiter: ApiRateLimiterSettings,
-    history: HistorySettings
+    history: HistorySettings,
+    evmStateDump: EvmStateDump
 ){
   require(sparkzSettings.network.handlingTransactionsEnabled || !forger.automaticForging,
     s"Node that does not support transaction handling cannot be a forger node: " +
